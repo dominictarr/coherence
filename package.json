@@ -8,7 +8,6 @@
     "url": "git://github.com/dominictarr/coherence.git"
   },
   "dependencies": {
-    "cont": "^1.0.3",
     "hyperscript": "^2.0.2",
     "libnested": "^1.4.1",
     "morphdom": "^2.3.3",
@@ -17,8 +16,14 @@
     "pull-stream": "^3.6.9",
     "watch": "^1.0.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "cont": "^1.0.3",
+    "ecstatic": "^3.3.0",
+    "querystring": "^0.2.0",
+    "stack": "^0.1.0"
+  },
   "scripts": {
+    "build": "browserify check.js > browser.js",
     "test": "set -e; for t in test/*.js; do node $t; done"
   },
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
