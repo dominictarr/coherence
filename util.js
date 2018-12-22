@@ -64,7 +64,8 @@ function flatten (a) {
 //even better would be streaming html,
 //not just into arrays.
 var k = 0
-exports.toHTML = function toHTML (hs) {
+
+function toHTML (hs) {
   return function (cb) {
     if(!isFunction(cb)) throw new Error('cb must be a function, was:'+cb)
     var called = false
@@ -90,6 +91,8 @@ exports.toHTML = function toHTML (hs) {
     })
   }
 }
+
+exports.toHTML = toHTML
 
 exports.createHiddenInputs = function createHiddenInputs (meta, _path) {
   _path = _path ? [].concat(_path) : []
@@ -117,6 +120,8 @@ exports.cacheTag = function (url, id, time) {
       rel: 'partial-refresh', href: url, id: cacheId(id), 'data-cache': ''+time
     }]
 }
+
+
 
 
 
