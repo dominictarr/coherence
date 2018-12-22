@@ -82,7 +82,18 @@ function update (id) {
         var fakeParent = document.createElement(el.parentNode.tagName)
         fakeParent.innerHTML = content
         morph(el, fakeParent.firstChild)
-        console.log("UPDATED TO:", el.dataset.ts)
+        //if the result received was <tag><more tags...>
+        //then diff the first tag, and 
+        if(fakeParent.children.length > 1) {
+          var prev = el
+          for(var i = 1; i< fakeParent.children.length; i++) {
+            var next = fakeParent.children[i]
+            if(prev.nextSibling)
+              el.parentNode.insertBefore(next, prev.nextSibling)
+            else
+              el.parentNode.appendChild(next)
+          }
+        }
       } else {
         //if the replacement is empty, remove el.
         el.parentNode.removeChild(el)
@@ -93,4 +104,12 @@ function update (id) {
     schedule()
   })
 }
+
+
+
+
+
+
+
+
 

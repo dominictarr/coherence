@@ -1,0 +1,49 @@
+.tree {
+  display: flex;
+  flex-direction: column;
+}
+.file__meta {
+  display: flex;
+  flex-direction: row;
+}
+.file__name {
+  padding: 5px;
+  width: 350px;
+  overflow: hidden;
+}
+.file__size {
+  width: 50px;
+  text-align: right;
+  padding: 5px;
+  background: peachpuff;
+}
+.file__mtime {
+  width: 100px;
+  text-align: right;
+  padding: 5px;
+}
+.dir {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid red;
+  margin: 5px;
+}
+
+textarea {
+  width: 100%;
+  height: 95%;
+  min-height: 0%;
+}
+button {
+  height: 5%;
+}
+form {
+  margin: 0px;
+}
+body {
+  margin: 0px;
+}
+
+pre.stdout {
+  display: inline;
+}
