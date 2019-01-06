@@ -1,6 +1,30 @@
 var morph = require('morphdom')
 var inflight = 0, timer, since
 
+//check wether user has this tab open, if it's not open
+//don't check anything again until they come back.
+//note: on my tiling window manager, it doesn't notice
+//if you left this page open, but switch to another workspace.
+//but if you switch tabs it does.
+
+var onScreen = document.visibilityState == 'visible'
+function setOnScreen () {
+  if(onScreen) return
+  onScreen = true
+  check(since)
+}
+if(!document.visibilityState) {
+  window.onfocus = setOnScreen
+  window.onblur = function () {
+    onScreen = false
+  }
+  window.onmouseover = setOnScreen
+}
+document.onvisibilitychange = function () {
+  if(document.visibilityState === 'visible') setOnScreen()
+  else onScreen = false
+}
+
 function xhr (url, cb) {
   var req = new XMLHttpRequest()
   req.open('get', url)
@@ -18,9 +42,12 @@ window.onload = function () {
   scan()
 }
 
+
 function schedule () {
   clearTimeout(timer)
   timer = setTimeout(function () {
+    if(!onScreen) return //don't check if the user isn't looking!
+    console.log('check agian', onScreen, document.visibilityState)
     check(since)
   }, 1e2)
 }
@@ -39,7 +66,9 @@ function scan () {
 // call the cache server, and see if there has been any updates
 // since this page was rendered.
 function check (_since) {
+  checking = true
   xhr('/cache/poll?since='+_since, function (_, data) {
+    checking = false
     var ids
     try { ids = JSON.parse(data) } catch(_) {}
     if(ids && 'object' === typeof ids) {
@@ -49,9 +78,6 @@ function check (_since) {
         ary.push(k)
       }
     }
-
-    console.log(ids)
-    if(since != _since) console.log("UPDATED SINCE", since)
 
     if(Array.isArray(ary) && ary.length) ary.forEach(update)
     if(!inflight) schedule()
@@ -69,30 +95,37 @@ function update (id) {
   }
   var href = el.dataset.href
   inflight ++
-  console.log("UPDATE", '/partial'+href, inflight)
   xhr('/partial'+href, function (err, content) {
-    console.log("MORPH", M_EL=el, M_C=content)
     MORPH=morph
     if(!err) {
-      //some node types cannot just simply be created anywhere.
-      //(such as tbody, can only be inside a table)
-      //if you just call morph(el, content) it doesn't work.
-      //so this is a hack to make it work.
+      // some node types cannot just simply be created anywhere.
+      // (such as tbody, can only be inside a table)
+      // if you just call morph(el, content) it becomes a flattened
+      // string.
+      // so, create the same node type as the parent.
+      // (this will break if you try to update to a different node type)
+      //
+      // DocumentFragment looked promising here, but document
+      // fragment does not have innerHTML! you can only
+      // use it manually! (I guess I could send the html
+      // encoded as json...)
       if(content) {
         var fakeParent = document.createElement(el.parentNode.tagName)
         fakeParent.innerHTML = content
         morph(el, fakeParent.firstChild)
-        //if the result received was <tag><more tags...>
-        //then diff the first tag, and 
+        //sometimes, we want to send more than one tag.
+        //so that the main tag is updated then some more are appended.
+        //do this via a document-fragment, which means only
+        //one reflow.
         if(fakeParent.children.length > 1) {
-          var prev = el
+          var df = document.createDocumentFragment()
           for(var i = 1; i< fakeParent.children.length; i++) {
-            var next = fakeParent.children[i]
-            if(prev.nextSibling)
-              el.parentNode.insertBefore(next, prev.nextSibling)
-            else
-              el.parentNode.appendChild(next)
+            df.appendChild(fakeParent.children[i])
           }
+          if(el.nextSibling)
+            el.parentNode.insertBefore(df, el.nextSibling)
+          else
+            el.parentNode.appendChild(df)
         }
       } else {
         //if the replacement is empty, remove el.
@@ -104,8 +137,6 @@ function update (id) {
     schedule()
   })
 }
-
-
 
 
 
