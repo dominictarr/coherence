@@ -1,0 +1,11 @@
+
+.chat {
+  display: flex;
+  flex-direction: column;
+}
+.message {
+  display: flex;
+  flex-direction: row;
+}
+
+
