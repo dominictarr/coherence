@@ -20,10 +20,10 @@ if(!document.visibilityState) {
   }
   window.onmouseover = setOnScreen
 }
-document.onvisibilitychange = function () {
+document.addEventListener('visibilitychange', function () {
   if(document.visibilityState === 'visible') setOnScreen()
   else onScreen = false
-}
+})
 
 //-- util functions ---
 
@@ -40,16 +40,14 @@ function xhr (url, cb) {
   req.send()
 }
 
-window.onload = function () {
-  scan()
-}
+window.addEventListener('load', scan)
 
 // --- forms ---
 
 var forms = require('form-submit')
 var clicked_button = null, timer
 //need this hack, because onsubmit event can't tell you what button was pressed.
-window.onclick = function (ev) {
+window.addEventListener('click',function (ev) {
   if(ev.target.tagName == 'button' || ev.target.tagName == 'input' && ev.target.type == 'submit') {
     clicked_button = ev.target
     clearTimeout(timer)
@@ -57,8 +55,8 @@ window.onclick = function (ev) {
       clicked_button = null
     },0)
   }
-}
-window.onsubmit = function (ev) {
+})
+window.addEventListener('submit', function (ev) {
   var form = ev.target
   if(form.dataset.update || form.dataset.invalidate || form.dataset.reset) {
     ev.preventDefault()
@@ -74,7 +72,7 @@ window.onsubmit = function (ev) {
         form.reset()
     })
   }
-}
+})
 
 // --- checking for and applying updates ------
 
@@ -121,6 +119,8 @@ function check (_since) {
 }
 
 function mutate (el, content) {
+  // update an element with new content, using morphdom.
+
   // some node types cannot just simply be created anywhere.
   // (such as tbody, can only be inside a table)
   // if you just call morph(el, content) it becomes a flattened
@@ -175,5 +175,4 @@ function update (id) {
     schedule()
   })
 }
-
 
