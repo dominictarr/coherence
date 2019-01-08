@@ -25,6 +25,8 @@ document.onvisibilitychange = function () {
   else onScreen = false
 }
 
+//-- util functions ---
+
 function xhr (url, cb) {
   var req = new XMLHttpRequest()
   req.open('get', url)
@@ -42,12 +44,45 @@ window.onload = function () {
   scan()
 }
 
+// --- forms ---
+
+var forms = require('form-submit')
+var clicked_button = null, timer
+//need this hack, because onsubmit event can't tell you what button was pressed.
+window.onclick = function (ev) {
+  if(ev.target.tagName == 'button' || ev.target.tagName == 'input' && ev.target.type == 'submit') {
+    clicked_button = ev.target
+    clearTimeout(timer)
+    timer = setTimeout(function () {
+      clicked_button = null
+    },0)
+  }
+}
+window.onsubmit = function (ev) {
+  var form = ev.target
+  if(form.dataset.update || form.dataset.invalidate || form.dataset.reset) {
+    ev.preventDefault()
+    forms.submit(form, clicked_button, function (err, content) {
+      //what to do with error?
+      if(form.dataset.invalidate)
+        update(form.dataset.invalidate)
+      if(form.dataset.update) {
+        var target = document.querySelector(form.dataset.update)
+        morph(target, content)
+      }
+      if(form.dataset.reset)
+        form.reset()
+    })
+  }
+}
+
+// --- checking for and applying updates ------
 
 function schedule () {
   clearTimeout(timer)
   timer = setTimeout(function () {
     if(!onScreen) return //don't check if the user isn't looking!
-    console.log('check agian', onScreen, document.visibilityState)
+    console.log('check again', onScreen, document.visibilityState)
     check(since)
   }, 1e2)
 }
@@ -66,6 +101,7 @@ function scan () {
 // call the cache server, and see if there has been any updates
 // since this page was rendered.
 function check (_since) {
+  if(_since == undefined) throw new Error('undefined: since')
   checking = true
   xhr('/cache/poll?since='+_since, function (_, data) {
     checking = false
@@ -84,6 +120,42 @@ function check (_since) {
   })
 }
 
+function mutate (el, content) {
+  // some node types cannot just simply be created anywhere.
+  // (such as tbody, can only be inside a table)
+  // if you just call morph(el, content) it becomes a flattened
+  // string.
+  // so, create the same node type as the parent.
+  // (this will break if you try to update to a different node type)
+  //
+  // DocumentFragment looked promising here, but document
+  // fragment does not have innerHTML! you can only
+  // use it manually! (I guess I could send the html
+  // encoded as json...)
+  if(content) {
+    var fakeParent = document.createElement(el.parentNode.tagName)
+    fakeParent.innerHTML = content
+    morph(el, fakeParent.firstChild)
+    //sometimes, we want to send more than one tag.
+    //so that the main tag is updated then some more are appended.
+    //do this via a document-fragment, which means only
+    //one reflow.
+    if(fakeParent.children.length > 1) {
+      var df = document.createDocumentFragment()
+      for(var i = 1; i< fakeParent.children.length; i++) {
+        df.appendChild(fakeParent.children[i])
+      }
+      if(el.nextSibling)
+        el.parentNode.insertBefore(df, el.nextSibling)
+      else
+        el.parentNode.appendChild(df)
+    }
+  } else {
+    //if the replacement is empty, remove el.
+    el.parentNode.removeChild(el)
+  }
+}
+
 function update (id) {
   console.log('update:'+id)
   console.log('[data-id='+JSON.stringify(id)+']')
@@ -97,50 +169,11 @@ function update (id) {
   inflight ++
   xhr('/partial'+href, function (err, content) {
     MORPH=morph
-    if(!err) {
-      // some node types cannot just simply be created anywhere.
-      // (such as tbody, can only be inside a table)
-      // if you just call morph(el, content) it becomes a flattened
-      // string.
-      // so, create the same node type as the parent.
-      // (this will break if you try to update to a different node type)
-      //
-      // DocumentFragment looked promising here, but document
-      // fragment does not have innerHTML! you can only
-      // use it manually! (I guess I could send the html
-      // encoded as json...)
-      if(content) {
-        var fakeParent = document.createElement(el.parentNode.tagName)
-        fakeParent.innerHTML = content
-        morph(el, fakeParent.firstChild)
-        //sometimes, we want to send more than one tag.
-        //so that the main tag is updated then some more are appended.
-        //do this via a document-fragment, which means only
-        //one reflow.
-        if(fakeParent.children.length > 1) {
-          var df = document.createDocumentFragment()
-          for(var i = 1; i< fakeParent.children.length; i++) {
-            df.appendChild(fakeParent.children[i])
-          }
-          if(el.nextSibling)
-            el.parentNode.insertBefore(df, el.nextSibling)
-          else
-            el.parentNode.appendChild(df)
-        }
-      } else {
-        //if the replacement is empty, remove el.
-        el.parentNode.removeChild(el)
-      }
-    }
+    if(!err) mutate(el, content)
     //check again in one second
     if(--inflight) return
     schedule()
   })
 }
-
-
-
-
-
 
 
