@@ -1,4 +1,4 @@
-var Coherence = require('../')
+var Coherence = require('../..')
 var http      = require('http')
 var QS        = require('querystring')
 var ago       = require('nice-ago')
