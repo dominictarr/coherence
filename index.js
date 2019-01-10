@@ -73,7 +73,7 @@ function Render(layout) {
     }
     else
     if(req.url == '/coherence/browser.js') {
-      console.log("RSERVE BROWSER.js")
+      console.log("SERVE BROWSER.js")
       res.status = 200
       return fs.createReadStream(path.join(__dirname, 'browser.js')).pipe(res)
     }
@@ -108,7 +108,6 @@ function Render(layout) {
 
   render.invalidate = function (key, ts) {
     apply.since = cache[key] = ts
-    console.log(cache)
     while(waiting.length)
       waiting.shift()(ts)
     return ts
@@ -118,6 +117,5 @@ function Render(layout) {
 }
 
 module.exports = Render
-
 
 
