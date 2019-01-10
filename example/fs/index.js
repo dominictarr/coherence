@@ -131,11 +131,6 @@ http.createServer(Stack(
     }
     next()
   },
-//  ecstatic({
-//    root:path.join(__dirname, 'static'),
-//    showDir: true,
-//    baseDir: '/static'
-//  }),
   function (req, res, next) {
     if(/^\/static\//.test(req.url))
       fs.createReadStream(__dirname+req.url).pipe(res)
@@ -167,4 +162,5 @@ coherence.use('ticker', function (opts, apply) {
     }] : ''
   ]
 })
+
 
