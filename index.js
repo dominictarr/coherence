@@ -82,12 +82,12 @@ function Render(layout) {
       if(paths[0] === 'partial') {
         fn = nested.get(renderers, paths.slice(1))
         if(!fn) return next(new Error('not found:'+paths))
-        val = fn(opts, apply)
+        val = fn(opts, apply, req)
       }
       else {
         var fn = nested.get(renderers, paths)
         if(!fn) return next(new Error('not found:'+paths))
-        val = layout(opts, fn(opts, apply))
+        val = layout(opts, fn(opts, apply, req))
       }
 
       u.toHTML(val)(function (err, result) {
