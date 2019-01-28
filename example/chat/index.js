@@ -12,8 +12,24 @@ var Stack     = require('stack')
 //in practice you'd probably have some sort of database.
 var history = []
 var filename = '/tmp/coherence-example-chat.txt'
+function append(data, cb) {
+  history.push(data)
+  //really, should have a thing here to ensure that only one append happens at a time
+  //but this is just example code so skip it.
+  fs.appendFile(filename, JSON.stringify(data)+  '\n', 'utf8', function (err) {
+    coherence.invalidate('latest', Date.now())
+    cb()
+  })
+}
+
 fs.readFile(filename, 'utf8', function (_, str) {
-  history = (str || '').split('\n').filter(Boolean).map(JSON.parse)
+  history = (str || '').split('\n').filter(Boolean).map(function (e) {
+    //it's theoritically possible that two appends happen
+    //happen at once and that might cause something invalid so
+    //do parse inside of try.
+    try { return JSON.parse(e) }
+    catch (ignore) { }
+  })
   if(!history.length)
     history.push({
       ts: Date.now(),
@@ -32,7 +48,13 @@ var coherence = Coherence(function (opts, content) {
       ['script', {src: '/coherence/browser.js'}],
       ['link', {rel: 'stylesheet', href: '/static/style.css'}]
     ],
-    ['body', content]
+    ['body',
+      ['div.header',
+        ['div.heading', 'coherence chat'],
+        ['a', {href: '/setup'}, 'setup'],
+      ],
+      content
+    ]
   ]
 })
 //the body of the chat. a list of messages.
@@ -46,9 +68,13 @@ var coherence = Coherence(function (opts, content) {
         history
         .slice(opts.start, end)
         .map(function (e) {
+          var date = new Date(e.ts)
           return ['div.message',
-            ['label.time', e.ts],
-            ['label.author', e.author || 'anonymous'],
+            ['div.meta',
+              ['label.author', e.author || 'anonymous'],
+              ' ',
+              ['label.time', {title: date.toString()}, date.getHours()+':'+date.getMinutes()],
+            ],
             ['div', e.text]
           ]
         })
@@ -85,8 +111,25 @@ var coherence = Coherence(function (opts, content) {
     ]
   ]
 })
+.use('setup', function (opts, apply, req) {
+  return [
+    'div.page',
+      ['form', {
+        method: 'POST',
+        autocomplete: 'off',
+      },
+      ['input', {type: 'text', name: "name", value: req.context.name || 'anonymous'}],
+      ['input', {type: 'hidden', name: 'type', value: 'setup'}],
+      ['button', 'submit']
+    ]
+  ]
+})
 
 http.createServer(Stack(
+  function (req, res, next) {
+    req.context = QS.parse(req.headers.cookie||'') || {}
+    next()
+  },
   function (req, res, next) {
     if(/^\/static\//.test(req.url))
       fs.createReadStream(__dirname+req.url).pipe(res)
@@ -96,29 +139,43 @@ http.createServer(Stack(
     if(req.method == 'POST') {
       var body = ''
       req.on('data', function (d) { body += d })
-      req.on('end', function (d) { console.log('BODY', body); req.body = QS.parse(body); next() })
+      req.on('end', function (d) {
+        console.log('BODY', body)
+        req.body = QS.parse(body)
+        next()
+      })
     }
     else
       next()
   },
   function (req, res, next) {
+    function redirect () {
+          //redirect to get so this still works http only app, without javascript
+          //(although you have to reload to get new messages)
+      res.setHeader('location', '/chat')
+      res.statusCode = 303
+      return res.end('')
+    }
+
     if(req.method == 'POST') {
-      var data = {ts: Date.now(), author: null, text: req.body.text}
-      history.push(data)
-      //really, should have a thing here to ensure that only one append happens at a time
-      //but this is just example code so skip it.
-      fs.appendFile(filename, JSON.stringify(data)+  '\n', 'utf8', function (err) {
-        coherence.invalidate('latest', Date.now())
-        //redirect to get so this still works http only app, without javascript
-        //(although you have to reload to get new messages)
-        res.setHeader('location', '/chat')
-        res.statusCode = 303
-        return res.end('')
-      })
+      if(req.body.type === 'setup') {
+        res.setHeader('set-cookie', QS.stringify(req.body))
+        redirect()
+      }
+      else {
+        append({
+          ts: Date.now(),
+          author: req.context.name,
+          text: req.body.text
+        }, redirect)
+      }
     }
     else
       next()
   },
   coherence
 )).listen(8011)
+
+
+
 

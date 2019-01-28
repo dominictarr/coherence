@@ -5,7 +5,32 @@
 }
 .message {
   display: flex;
+  flex-direction: column;
+}
+
+.message.meta {
+  display: flex;
   flex-direction: row;
 }
 
+.author {
+  font-weight: bold;
+}
+
+.time {
+  font-style: italic;
+  color: lightblue;
+}
+
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.heading {
+  font-style: bold;
+  font-size: 20pt;
+  color: darkblue;
+}
 
