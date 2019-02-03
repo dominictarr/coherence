@@ -51,9 +51,10 @@ var coherence = Coherence(function (opts, content) {
     ['body',
       ['div.header',
         ['div.heading', 'coherence chat'],
-        ['a', {href: '/setup'}, 'setup'],
+        ['a', {href: '/setup', 'data-target': 'modal'}, 'setup'],
       ],
-      content
+      ['div.page', content],
+      ['div#modal']
     ]
   ]
 })
@@ -113,16 +114,16 @@ var coherence = Coherence(function (opts, content) {
 })
 .use('setup', function (opts, apply, req) {
   return [
-    'div.page',
+    'div.modal',
       ['form', {
-        method: 'POST',
-        autocomplete: 'off',
-      },
-      ['input', {type: 'text', name: "name", value: req.context.name || 'anonymous'}],
-      ['input', {type: 'hidden', name: 'type', value: 'setup'}],
-      ['button', 'submit']
+          method: 'POST',
+          autocomplete: 'off',
+        },
+        ['input', {type: 'text', name: "name", value: req.context.name || 'anonymous'}],
+        ['input', {type: 'hidden', name: 'type', value: 'setup'}],
+        ['button', 'submit']
+      ]
     ]
-  ]
 })
 
 http.createServer(Stack(
@@ -150,8 +151,8 @@ http.createServer(Stack(
   },
   function (req, res, next) {
     function redirect () {
-          //redirect to get so this still works http only app, without javascript
-          //(although you have to reload to get new messages)
+      //redirect to get so this still works http only app, without javascript
+      //(although you have to reload to get new messages)
       res.setHeader('location', '/chat')
       res.statusCode = 303
       return res.end('')
@@ -175,6 +176,12 @@ http.createServer(Stack(
   },
   coherence
 )).listen(8011)
+
+
+
+
+
+
 
 
 

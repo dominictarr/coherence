@@ -34,3 +34,41 @@
   color: darkblue;
 }
 
+.modal {
+  content: 'BACKGROUND';
+  position: fixed;
+  top: 0px;
+  bottom: 1px;
+  left: 0px;
+  right: 0px;
+  background: hsla(0, 0%, 0%, 20%);
+  z-index: 10;
+}
+
+
+.modal>*:first-child {
+  /*
+    center vertically and horizontally when you do not
+    know the size of the element
+    https://css-tricks.com/centering-css-complete-guide/
+  */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 60%;
+  margin-left: auto;
+  margin-right: auto;
+  border: solid 1px darkblue;
+  padding: 50px;
+  z-index: 100;
+  background: white;
+}
+
+
+
+
+
+
+
