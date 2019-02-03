@@ -44,16 +44,33 @@ window.addEventListener('load', scan)
 
 // --- forms ---
 
+function isTag(element, type) {
+  return element.tagName.toLowerCase() == type.toLowerCase()
+}
+
 var forms = require('form-submit')
 var clicked_button = null, timer
 //need this hack, because onsubmit event can't tell you what button was pressed.
 window.addEventListener('click',function (ev) {
-  if(ev.target.tagName == 'button' || ev.target.tagName == 'input' && ev.target.type == 'submit') {
+  if(isTag(ev.target, 'button') || isTag(ev.target, 'input') && ev.target.type == 'submit') {
     clicked_button = ev.target
     clearTimeout(timer)
     timer = setTimeout(function () {
       clicked_button = null
     },0)
+  }
+  //if we have a target for a link click, apply that element.
+  //unless ctrl is held down, which would open a new tab
+  else if(!ev.ctrlKey && isTag(ev.target, 'a') && ev.target.dataset.target) {
+    var target = document.querySelector('#'+ev.target.dataset.target)
+    A = ev.target
+    if(!target) return
+    ev.preventDefault()
+    console.log('partial:', ev.target.dataset.href, ev.target.getAttribute('href'))
+    var href = '/partial' + (ev.target.dataset.href || ev.target.getAttribute('href'))
+    xhr(href, function (err, content) {
+      morph(target, content)
+    })
   }
 })
 window.addEventListener('submit', function (ev) {
@@ -175,4 +192,6 @@ function update (id) {
     schedule()
   })
 }
+
+
 
