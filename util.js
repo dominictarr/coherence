@@ -28,9 +28,6 @@ exports.toUrl = function toUrl(path, opts) {
     !isEmpty(opts) ? '?'+QS.encode(opts) : ''
   )
 }
-exports.h = function () {
-  return [].slice.call(arguments)
-}
 
 function toCont (f) {
   if(f.length === 1) return function (cb) {
@@ -107,21 +104,5 @@ exports.createHiddenInputs = function createHiddenInputs (meta, _path) {
   }, true)
   return hidden
 }
-
-var cacheId = exports.cacheId = function (id) {
-  if('string' === typeof id)
-    return '_'+Buffer.from(id.substring(1, 12), 'base64').toString('hex')
-  else
-    return 'R'+id.lte+'-'+(id.lte - id.gte)
-}
-exports.cacheTag = function (url, id, time) {
-  if(time)
-    return ['link', {
-      rel: 'partial-refresh', href: url, id: cacheId(id), 'data-cache': ''+time
-    }]
-}
-
-
-
 
 
