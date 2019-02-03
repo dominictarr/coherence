@@ -1,3 +1,4 @@
+var names = require('./names')
 var morph = require('morphdom')
 var inflight = 0, timer, since
 
@@ -50,8 +51,11 @@ function isTag(element, type) {
 
 var forms = require('form-submit')
 var clicked_button = null, timer
-//need this hack, because onsubmit event can't tell you what button was pressed.
+
+//remember which button was clicked, or handle the click if it was a link.
 window.addEventListener('click',function (ev) {
+  //need this hack, because onsubmit event can't tell you what button was pressed.
+
   if(isTag(ev.target, 'button') || isTag(ev.target, 'input') && ev.target.type == 'submit') {
     clicked_button = ev.target
     clearTimeout(timer)
@@ -61,31 +65,36 @@ window.addEventListener('click',function (ev) {
   }
   //if we have a target for a link click, apply that element.
   //unless ctrl is held down, which would open a new tab
-  else if(!ev.ctrlKey && isTag(ev.target, 'a') && ev.target.dataset.target) {
-    var target = document.querySelector('#'+ev.target.dataset.target)
-    A = ev.target
-    if(!target) return
+  else if(!ev.ctrlKey && isTag(ev.target, 'a') && ev.target.dataset[names.Update]) {
+    var update = document.getElementById(ev.target.dataset[names.Update])
+    if(!update) return
     ev.preventDefault()
-    console.log('partial:', ev.target.dataset.href, ev.target.getAttribute('href'))
-    var href = '/partial' + (ev.target.dataset.href || ev.target.getAttribute('href'))
-    xhr(href, function (err, content) {
-      morph(target, content)
-    })
+
+    //use getAttribute instead of ev.target.href because then it will just be / and not have
+    //http:...com/...
+    var href = (ev.target.dataset[names.OpenHref] || ev.target.getAttribute('href'))
+    if(href)
+      xhr('/' + names.Partial + href, function (err, content) {
+        if(err) console.error(err) //TODO: what to do with error?
+        else morph(update, content)
+      })
   }
 })
+
+//handle form submit
 window.addEventListener('submit', function (ev) {
   var form = ev.target
-  if(form.dataset.update || form.dataset.invalidate || form.dataset.reset) {
+  if(form.dataset[names.Update] || form.dataset[names.Invalidate] || form.dataset[names.Reset]) {
     ev.preventDefault()
     forms.submit(form, clicked_button, function (err, content) {
       //what to do with error?
-      if(form.dataset.invalidate)
-        update(form.dataset.invalidate)
-      if(form.dataset.update) {
-        var target = document.querySelector(form.dataset.update)
+      if(form.dataset[names.Invalidate])
+        update(form.dataset[names.Invalidate])
+      if(form.dataset[names.Update]) {
+        var target = document.getElementById(form.dataset[names.Update])
         morph(target, content)
       }
-      if(form.dataset.reset)
+      if(form.dataset[names.Reset])
         form.reset()
     })
   }
@@ -106,9 +115,9 @@ function scan () {
   if(since) throw new Error('only scan once!')
   since = Infinity
   ;[].forEach.call(
-    document.querySelectorAll('[data-ts]'),
+    document.querySelectorAll('[data-'+names.Timestamp+']'),
     function (el) {
-      since = isNaN(+el.dataset.ts) ? since : Math.min(since, +el.dataset.ts)
+      since = isNaN(+el.dataset[names.Timestamp]) ? since : Math.min(since, +el.dataset[names.Timestamp])
     })
   check(since)
 }
@@ -118,7 +127,7 @@ function scan () {
 function check (_since) {
   if(_since == undefined) throw new Error('undefined: since')
   checking = true
-  xhr('/cache/poll?since='+_since, function (_, data) {
+  xhr('/' + names.Coherence + '/' + names.Cache + '?since='+_since, function (_, data) {
     checking = false
     var ids
     try { ids = JSON.parse(data) } catch(_) {}
@@ -148,7 +157,7 @@ function mutate (el, content) {
   // DocumentFragment looked promising here, but document
   // fragment does not have innerHTML! you can only
   // use it manually! (I guess I could send the html
-  // encoded as json...)
+  // encoded as json... but that wouldn't be as light weight)
   if(content) {
     var fakeParent = document.createElement(el.parentNode.tagName)
     fakeParent.innerHTML = content
@@ -156,12 +165,12 @@ function mutate (el, content) {
     //sometimes, we want to send more than one tag.
     //so that the main tag is updated then some more are appended.
     //do this via a document-fragment, which means only
-    //one reflow.
+    //one reflow (faster layout).
     if(fakeParent.children.length > 1) {
       var df = document.createDocumentFragment()
-      for(var i = 1; i< fakeParent.children.length; i++) {
+      for(var i = 1; i< fakeParent.children.length; i++)
         df.appendChild(fakeParent.children[i])
-      }
+
       if(el.nextSibling)
         el.parentNode.insertBefore(df, el.nextSibling)
       else
@@ -175,23 +184,25 @@ function mutate (el, content) {
 
 function update (id) {
   console.log('update:'+id)
-  console.log('[data-id='+JSON.stringify(id)+']')
-  var el = document.querySelector('[data-id='+JSON.stringify(id)+']')
+  var el = document.querySelector('[data-'+names.Identity+'='+JSON.stringify(id)+']')
   if(!el) {
     console.log('could not find id:'+id)
     return
     //xxxxxxxx
   }
-  var href = el.dataset.href
-  inflight ++
-  xhr('/partial'+href, function (err, content) {
-    MORPH=morph
-    if(!err) mutate(el, content)
-    //check again in one second
-    if(--inflight) return
-    schedule()
-  })
+  //href to update this element
+  var href = el.dataset[names.PartialHref]
+  if(href) {
+    inflight ++
+    xhr('/'+names.Partial+href, function (err, content) {
+      if(!err) mutate(el, content)
+      //check again in one second
+      if(--inflight) return
+      schedule()
+    })
+  }
+  else {
+    console.error('cannot update element, missing data-'+names.PartialHref+' attribute')
+  }
 }
-
-
 

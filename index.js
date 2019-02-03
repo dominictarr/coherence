@@ -1,9 +1,13 @@
-var u = require('./util')
-var nested = require('libnested')
 var URL = require('url')
 var QS = require('querystring')
 var fs = require('fs')
 var path = require('path')
+
+var nested = require('libnested')
+
+var u = require('./util')
+var names = require('./names')
+
 
 function path2Array (path) {
   return (path[0] == '/' ? path : '/' + path).split('/').slice(1)
@@ -43,43 +47,37 @@ function Render(layout) {
     var paths = path2Array(url.pathname)
     var opts = QS.parse(url.query)
 
-    console.log(req.method, paths.join('/'), opts)
-
     //check the cache to see if anything has updated.
-    if(paths[0] === 'cache') {
-      console.log('cache', paths)
-      if(paths[1] == 'poll') {
-        var ids = {}, since = +opts.since
-        if(since >= apply.since) {
-          console.log('LONG POLL')
-          return waiting.push(function (_since) {
-            var ids = {}
-            for(var k in cache) {
-              if(cache[k] > since) {
-                ids[k] = cache[k]
-              }
+    if(paths[0] === names.Coherence && paths[1] == names.Cache) {
+      var ids = {}, since = +opts.since
+      if(since >= apply.since) {
+        console.log('LONG POLL')
+        return waiting.push(function (_since) {
+          var ids = {}
+          for(var k in cache) {
+            if(cache[k] > since) {
+              ids[k] = cache[k]
             }
-            return res.end(JSON.stringify(ids))
-          })
-        }
-        for(var k in cache) {
-          if(cache[k] > since) {
-            ids[k] = cache[k]
           }
-        }
-
-        return res.end(JSON.stringify(ids))
+          return res.end(JSON.stringify(ids))
+        })
       }
+      for(var k in cache) {
+        if(cache[k] > since) {
+          ids[k] = cache[k]
+        }
+      }
+
+      return res.end(JSON.stringify(ids))
     }
     else
-    if(req.url == '/coherence/browser.js') {
-      console.log("SERVE BROWSER.js")
+    if(req.url === render.scriptUrl) {
       res.status = 200
       return fs.createReadStream(path.join(__dirname, 'browser.js')).pipe(res)
     }
     //if prefixed with /partial/... then render without the layout (no, headder, nav, etc)
     else {
-      if(paths[0] === 'partial') {
+      if(paths[0] === names.Partial) {
         fn = nested.get(renderers, paths.slice(1))
         if(!fn) return next(new Error('not found:'+paths))
         val = fn(opts, apply, req)
@@ -93,7 +91,6 @@ function Render(layout) {
       u.toHTML(val)(function (err, result) {
         if(err) return next(err)
         else if(Array.isArray(result)) {
-          console.log('multiresult:', result.length)
           res.end(result.map(function (e) { return e.outerHTML }).join('\n'))
         }
         else res.end(result.outerHTML || '')
@@ -113,9 +110,10 @@ function Render(layout) {
     return ts
   }
 
+  render.scriptUrl = '/'+names.Coherence + '/' + names.Script + '.js'
+
   return render
 }
 
 module.exports = Render
-
 
