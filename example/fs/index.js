@@ -17,7 +17,7 @@ var coherence = Coherence(function (opts, content) {
   return ['html',
     ['head',
       ['meta', {charset: 'UTF-8'}],
-      ['script', {src: '/coherence/browser.js'}],
+      ['script', {src: coherence.scriptUrl}],
       ['link', {rel: 'stylesheet', href: '/static/style.css'}]
     ],
     ['body', content]

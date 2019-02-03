@@ -9,7 +9,7 @@ var coherence = Coherence(function (opts, content) {
     ['head',
       ['meta', {charset:'utf8'}],
       //this script must be loaded on front end!
-      ['script', {src: '/coherence/browser.js'}],
+      ['script', {src: coherence.scriptUrl}],
     ],
     ['body', content]
   ]

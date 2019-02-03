@@ -45,13 +45,13 @@ var coherence = Coherence(function (opts, content) {
   return ['html',
     ['head',
       ['meta', {charset: 'UTF-8'}],
-      ['script', {src: '/coherence/browser.js'}],
+      ['script', {src: coherence.scriptUrl}],
       ['link', {rel: 'stylesheet', href: '/static/style.css'}]
     ],
     ['body',
       ['div.header',
         ['div.heading', 'coherence chat'],
-        ['a', {href: '/setup', 'data-target': 'modal'}, 'setup'],
+        ['a', {href: '/setup', 'data-update': 'modal'}, 'setup'],
       ],
       ['div.page', content],
       ['div#modal']
@@ -176,13 +176,4 @@ http.createServer(Stack(
   },
   coherence
 )).listen(8011)
-
-
-
-
-
-
-
-
-
 
