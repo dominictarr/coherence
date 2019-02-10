@@ -1,5 +1,5 @@
 var URL = require('url')
-var QS = require('querystring')
+var QS = require('qs')
 var fs = require('fs')
 var path = require('path')
 
@@ -8,28 +8,32 @@ var nested = require('libnested')
 var u = require('./util')
 var names = require('./names')
 
-
 function path2Array (path) {
   return (path[0] == '/' ? path : '/' + path).split('/').slice(1)
 }
+
+var doctype = '<!DOCTYPE html \n  PUBLIC "-//W3C//DTD HTML 4.01//EN"\n  "http://www.w3.org/TR/html4/strict.dtd">'
 
 function Render(layout) {
   var renderers = {}
   var cache = {}
   var waiting = []
-  function apply (path, opts) {
-    var fn = nested.get(renderers, path)
-    if(!fn) throw new Error('no renderer at:'+path)
-    return fn(opts, apply)
-  }
-
-  apply.toUrl = function (path, opts) {
-    return '/' + path + (opts ? '?' + QS.stringify(opts) : '')
-  }
-  apply.since = Date.now()
 
   function render (req, res, next) {
-    //if used in stack or express this will be defined already.
+
+    function apply (path, opts) {
+      var fn = nested.get(renderers, path)
+      if(!fn) throw new Error('no renderer at:'+path)
+      return fn(opts, apply, req)
+    }
+
+    apply.since = Date.now()
+    apply.scriptUrl = render.scriptUrl
+    apply.toUrl = function (path, opts) {
+      return '/' + path + (opts ? '?' + QS.stringify(opts) : '')
+    }
+
+    //if used in stack/connect/express this will be defined already.
     next = next || function (err) {
       if(!err) err = new Error('not found')
       if(err) {
@@ -51,7 +55,6 @@ function Render(layout) {
     if(paths[0] === names.Coherence && paths[1] == names.Cache) {
       var ids = {}, since = +opts.since
       if(since >= apply.since) {
-        console.log('LONG POLL')
         return waiting.push(function (_since) {
           var ids = {}
           for(var k in cache) {
@@ -85,7 +88,7 @@ function Render(layout) {
       else {
         var fn = nested.get(renderers, paths)
         if(!fn) return next(new Error('not found:'+paths))
-        val = layout(opts, fn(opts, apply, req))
+        val = layout(opts, fn(opts, apply, req), apply, req)
       }
 
       u.toHTML(val)(function (err, result) {
@@ -93,7 +96,7 @@ function Render(layout) {
         else if(Array.isArray(result)) {
           res.end(result.map(function (e) { return e.outerHTML }).join('\n'))
         }
-        else res.end(result.outerHTML || '')
+        else res.end(doctype + result.outerHTML || '')
       })
     }
   }
