@@ -107,7 +107,7 @@ function Render(layout) {
   }
 
   render.invalidate = function (key, ts) {
-    apply.since = cache[key] = ts
+    cache[key] = ts
     while(waiting.length)
       waiting.shift()(ts)
     return ts
