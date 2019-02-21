@@ -18,10 +18,12 @@
     "watch": "^1.0.2"
   },
   "devDependencies": {
+    "browserify": "^16.2.3",
     "cont": "^1.0.3",
     "ecstatic": "^3.3.0",
     "querystring": "^0.2.0",
-    "stack": "^0.1.0"
+    "stack": "^0.1.0",
+    "urlencoded-request-parser": "^1.0.1"
   },
   "scripts": {
     "build": "browserify check.js > browser.js",
