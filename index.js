@@ -54,7 +54,7 @@ function Render(layout) {
     //check the cache to see if anything has updated.
     if(paths[0] === names.Coherence && paths[1] == names.Cache) {
       var ids = {}, since = +opts.since
-      if(since >= apply.since) {
+      if(since >= render.since) {
         return waiting.push(function (_since) {
           var ids = {}
           for(var k in cache) {
@@ -80,7 +80,9 @@ function Render(layout) {
     }
     //if prefixed with /partial/... then render without the layout (no, headder, nav, etc)
     else {
+      var useDocType = false
       if(paths[0] === names.Partial) {
+        useDocType = true
         fn = nested.get(renderers, paths.slice(1))
         if(!fn) return next(new Error('not found:'+paths))
         val = fn(opts, apply, req)
@@ -96,10 +98,12 @@ function Render(layout) {
         else if(Array.isArray(result)) {
           res.end(result.map(function (e) { return e.outerHTML }).join('\n'))
         }
-        else res.end(doctype + result.outerHTML || '')
+        else res.end((useDocType ? doctype : '') + result.outerHTML || '')
       })
     }
   }
+
+  render.since = 0
 
   render.use = function (path, fn) {
     nested.set(renderers, path2Array(path), fn)
@@ -107,7 +111,7 @@ function Render(layout) {
   }
 
   render.invalidate = function (key, ts) {
-    cache[key] = ts
+    render.since = cache[key] = ts
     while(waiting.length)
       waiting.shift()(ts)
     return ts
