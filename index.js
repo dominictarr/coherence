@@ -9,6 +9,7 @@ var u = require('./util')
 var names = require('./names')
 
 function path2Array (path) {
+  if(Array.isArray(path)) return path
   return (path[0] == '/' ? path : '/' + path).split('/').slice(1)
 }
 
@@ -22,8 +23,10 @@ function Render(layout) {
   function render (req, res, next) {
 
     function apply (path, opts) {
-      var fn = nested.get(renderers, path)
-      if(!fn) throw new Error('no renderer at:'+path)
+      var fn = nested.get(renderers, path2Array(path))
+      if(!fn) {
+        throw new Error('no renderer at:'+path)
+      }
       return fn(opts, apply, req)
     }
 
@@ -112,6 +115,7 @@ function Render(layout) {
 
   render.invalidate = function (key, ts) {
     render.since = cache[key] = ts
+    //callback every listener? are we sure
     while(waiting.length)
       waiting.shift()(ts)
     return ts
@@ -123,4 +127,9 @@ function Render(layout) {
 }
 
 module.exports = Render
+
+
+
+
+
 
