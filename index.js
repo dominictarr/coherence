@@ -85,12 +85,13 @@ function Render(layout) {
     else {
       var useDocType = false
       if(paths[0] === names.Partial) {
-        useDocType = true
+        useDocType = false
         fn = nested.get(renderers, paths.slice(1))
         if(!fn) return next(new Error('not found:'+paths))
         val = fn(opts, apply, req)
       }
       else {
+        useDocType = true
         var fn = nested.get(renderers, paths)
         if(!fn) return next(new Error('not found:'+paths))
         val = layout(opts, fn(opts, apply, req), apply, req)
