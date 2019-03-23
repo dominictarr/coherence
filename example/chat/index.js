@@ -85,7 +85,7 @@ var coherence = Coherence(function (opts, content) {
     // Always has the same id, but when it's loaded
     // it will be replaced div.messages without an id.
     // so it will only be replaced once.
-    ['div.latest', {
+    ['div.latest#latest', {
       'data-id': 'latest',
       'data-href':'/messages?start='+end,
       'data-ts': Date.now()
@@ -153,7 +153,7 @@ http.createServer(Stack(
     function redirect () {
       //redirect to get so this still works http only app, without javascript
       //(although you have to reload to get new messages)
-      res.setHeader('location', '/chat')
+      res.setHeader('location', '/chat?cache='+Date.now()+'#latest')
       res.statusCode = 303
       return res.end('')
     }
