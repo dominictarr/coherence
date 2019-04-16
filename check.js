@@ -2,6 +2,9 @@ var names = require('./names')
 var morph = require('morphdom')
 var forms = require('submit-form-element')
 
+var IDS = {}
+window.COHERENCE = {ids: IDS}
+
 var inflight = 0, timer, since
 
 //check wether user has this tab open, if it's not open
@@ -103,13 +106,18 @@ window.addEventListener('submit', function (ev) {
 
 // --- checking for and applying updates ------
 
-function schedule () {
+function delay (errors) {
+  return Math.max(Math.pow(2, errors || 0), 128) * 1e3
+}
+
+function schedule (delay) {
   clearTimeout(timer)
+  delay = delay || 1e2
   timer = setTimeout(function () {
     if(!onScreen) return //don't check if the user isn't looking!
     console.log('check again', onScreen, document.visibilityState)
     check(since)
-  }, 1e2)
+  }, delay/2 + delay*Math.random())
 }
 
 function scan () {
@@ -118,6 +126,7 @@ function scan () {
   ;[].forEach.call(
     document.querySelectorAll('[data-'+names.Timestamp+']'),
     function (el) {
+      IDS[el.dataset[names.Identity]] =
       since = isNaN(+el.dataset[names.Timestamp]) ? since : Math.min(since, +el.dataset[names.Timestamp])
     })
 
@@ -128,13 +137,24 @@ function scan () {
 
 // call the cache server, and see if there has been any updates
 // since this page was rendered.
+var errors = 0
 function check (_since) {
   if(_since == undefined) throw new Error('undefined: since')
   checking = true
-  xhr('/' + names.Coherence + '/' + names.Cache + '?since='+_since, function (_, data) {
+  xhr('/' + names.Coherence + '/' + names.Cache + '?since='+_since, function (err, data) {
+    if(err) {
+      errors ++
+      console.error('error while checking cache, server maybe down?')
+      console.error(err)
+      return schedule(delay(errors))
+    }
     checking = false
     var ids
-    try { ids = JSON.parse(data) } catch(_) {}
+    try { ids = JSON.parse(data) } catch(_) {
+      errors ++
+      return schedule(delay(errors))
+    }
+    errors = 0
     if(ids && 'object' === typeof ids) {
       var ary = []
       for(var k in ids) {
@@ -209,5 +229,4 @@ function update (id) {
     console.error('cannot update element, missing data-'+names.PartialHref+' attribute')
   }
 }
-
 

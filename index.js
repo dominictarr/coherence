@@ -19,6 +19,7 @@ function Render(layout) {
   var renderers = {}
   var cache = {}
   var waiting = []
+  var latest = Date.now()
 
   function render (req, res, next) {
 
@@ -30,7 +31,7 @@ function Render(layout) {
       return fn(opts, apply, req)
     }
 
-    apply.since = Date.now()
+    apply.since = latest
     apply.scriptUrl = render.scriptUrl
     apply.toUrl = function (path, opts) {
       return '/' + path + (opts ? '?' + QS.stringify(opts) : '')
@@ -127,7 +128,7 @@ function Render(layout) {
   }
 
   render.invalidate = function (key, ts) {
-    render.since = cache[key] = ts
+    render.since = Math.max(render.since, cache[key] = ts)
     //callback every listener? are we sure
     while(waiting.length)
       waiting.shift()(ts)
@@ -140,5 +141,4 @@ function Render(layout) {
 }
 
 module.exports = Render
-
 
