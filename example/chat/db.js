@@ -1,3 +1,4 @@
+'use strict'
 var fs = require('fs')
 
 module.exports = function (filename, cb) {
@@ -24,10 +25,11 @@ module.exports = function (filename, cb) {
     array: function () { return history },
     append: function (data, cb) {
       fs.appendFile(filename, JSON.stringify(data)+  '\n', 'utf8', function (err) {
+        history.push(data)
+        console.log('append', history)
         cb()
       })
     },
   }
 }
-
 

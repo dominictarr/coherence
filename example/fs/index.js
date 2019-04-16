@@ -155,12 +155,12 @@ coherence.use('ticker', function (opts, apply) {
   var end = opts.end == null ? output.length : opts.end
   return [
     ['pre.stdout', output.substring(start, end)],
-    tail ? ['pre.stdout', {
-      'data-href': apply.toUrl('ticker', {start: end}),
-      'data-id': 'ticker',
-      'data-ts': apply.since
-    }] : ''
+    tail ? ['pre.stdout', apply.cacheAttrs(apply.toUrl('ticker', {start: end}), 'ticker')
+    ] : ''
   ]
 })
+
+
+
 
 

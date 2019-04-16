@@ -14,13 +14,9 @@ var coherence = Coherence(function (opts, content) {
     ['body', content]
   ]
 })
-.use('clock', function (opts) {
+.use('clock', function (opts, apply) {
   var time = new Date()
-  return ['h1', {
-    "data-id": "clock",
-    "data-href": "/clock",
-    "data-ts": +time,
-  }, time.toString()]
+  return ['h1', apply.cacheAttrs('/clock', 'clock', +time), time.toString()]
 })
 
 
@@ -29,6 +25,7 @@ setInterval(function () {
 }, 1000)
 
 http.createServer(coherence).listen(8012)
+
 
 
 

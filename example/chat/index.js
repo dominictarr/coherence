@@ -38,9 +38,9 @@ var coherence = Coherence(function (opts, content) {
 })
 //the body of the chat. a list of messages.
 //the special part is `div.latest` which is where future messages get inserted.
-.use('messages', function (opts) {
+.use('messages', function (opts, apply) {
   var start = opts.start | 0
-  var end = opts.end || history.length
+  var end = opts.end || db.array().length
   return [
     ['div.messages']
     .concat(
@@ -63,11 +63,14 @@ var coherence = Coherence(function (opts, content) {
     // Always has the same id, but when it's loaded
     // it will be replaced div.messages without an id.
     // so it will only be replaced once.
-    ['div.latest#latest', {
-      'data-id': 'latest',
-      'data-href':'/messages?start='+end,
-      'data-ts': Date.now()
-    }]
+    ['div.latest#latest', 
+      apply.cacheAttrs('/messages?start='+end, 'latest', Date.now())
+//{
+//      'data-id': 'latest',
+//      'data-href':'/messages?start='+end,
+//      'data-ts': Date.now()
+//    }
+    ]
   ]
 })
 //wrapper around messages view that includes a form for entering text.
