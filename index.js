@@ -40,7 +40,7 @@ function Render(layout) {
       return {
         'data-href': href,
         'data-id': id,
-        'data-ts': ts
+        'data-ts': ts || apply.since
       }
     }
 
@@ -64,6 +64,7 @@ function Render(layout) {
 
     //check the cache to see if anything has updated.
     if(paths[0] === names.Coherence && paths[1] == names.Cache) {
+      res.setHeader('Content-Type', 'application/json')
       var ids = {}, since = +opts.since
       if(since >= render.since) {
         return waiting.push(function (_since) {
@@ -95,6 +96,7 @@ function Render(layout) {
       res.statusCode = 200
       var useDocType = false
       if(paths[0] === names.Partial) {
+        res.setHeader('Content-Type', 'text/plain')
         useDocType = false
         fn = nested.get(renderers, paths.slice(1))
         if(!fn) return next(new Error('not found:'+paths))
@@ -138,8 +140,5 @@ function Render(layout) {
 }
 
 module.exports = Render
-
-
-
 
 
