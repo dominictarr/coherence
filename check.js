@@ -3,8 +3,8 @@ var names = require('./names')
 var morph = require('morphdom')
 var forms = require('submit-form-element')
 
-var IDS = {}
-window.COHERENCE = {ids: IDS}
+var cache = {}
+window.COHERENCE = {ids: cache}
 
 var inflight = 0, timer, since, checking = false
 
@@ -127,7 +127,7 @@ function scan () {
   ;[].forEach.call(
     document.querySelectorAll('[data-'+names.Timestamp+']'),
     function (el) {
-      IDS[el.dataset[names.Identity]] =
+      cache[el.dataset[names.Identity]] =
       since = isNaN(+el.dataset[names.Timestamp]) ? since : Math.min(since, +el.dataset[names.Timestamp])
     })
 
@@ -144,25 +144,33 @@ function check (_since) {
   if(checking) return
   checking = true
   xhr('/' + names.Coherence + '/' + names.Cache + '?since='+_since, function (err, data) {
+    checking = false
     if(err) {
       errors ++
       console.error('error while checking cache, server maybe down?')
       console.error(err)
       return schedule(delay(errors))
     }
-    checking = false
-    var ids
-    try { ids = JSON.parse(data) } catch(_) {
+    var response, start, ids
+    try { response = JSON.parse(data) } catch(_) {
       errors ++
       return schedule(delay(errors))
     }
+    ids = response && response.ids
+    start = response && response.start
     errors = 0
     if(ids && 'object' === typeof ids) {
       var ary = []
       for(var k in ids) {
-        since = Math.max(since, ids[k])
+        since = Math.max(since, ids[k] || 0)
         ary.push(k)
       }
+    }
+    since = Math.max(since, start || 0)
+
+    for(var k in cache) {
+      if(start > cache[k])
+        ary.push(k)
     }
 
     if(Array.isArray(ary) && ary.length) ary.forEach(update)
@@ -231,5 +239,4 @@ function update (id) {
     console.error('cannot update element, missing data-'+names.PartialHref+' attribute')
   }
 }
-
 

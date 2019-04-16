@@ -19,7 +19,7 @@ function Render(layout) {
   var renderers = {}
   var cache = {}
   var waiting = []
-  var latest = Date.now()
+  var latest = Date.now(), earliest = Date.now()
 
   function render (req, res, next) {
 
@@ -68,6 +68,7 @@ function Render(layout) {
       res.setHeader('Content-Type', 'application/json')
       res.statusCode = 200
       var ids = {}, since = +opts.since
+      console.log('SINCE?', since, render.since)
       if(since >= render.since) {
         return waiting.push(function (_since) {
           var ids = {}
@@ -76,16 +77,17 @@ function Render(layout) {
               ids[k] = cache[k]
             }
           }
-          return res.end(JSON.stringify(ids))
+          return res.end(JSON.stringify({ids: ids, start: earliest}))
         })
       }
+
       for(var k in cache) {
         if(cache[k] > since) {
           ids[k] = cache[k]
         }
       }
 
-      return res.end(JSON.stringify(ids))
+      return res.end(JSON.stringify({ids: ids, start: earliest}))
     }
     else
     if(req.url === render.scriptUrl) {
@@ -136,10 +138,19 @@ function Render(layout) {
     return ts
   }
 
+  //invalidate all cache records, this makes the frontend reload everything
+  render.invalidateAll = function () {
+    var ts = earliest = latest = render.since = Date.now()
+    while(waiting.length)
+      waiting.shift()(ts)
+    return ts
+  }
+
   render.scriptUrl = '/'+names.Coherence + '/' + names.Script + '.js'
 
   return render
 }
 
 module.exports = Render
+
 
