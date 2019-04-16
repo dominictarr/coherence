@@ -36,6 +36,14 @@ function Render(layout) {
       return '/' + path + (opts ? '?' + QS.stringify(opts) : '')
     }
 
+    apply.cacheAttrs = function (href, id, ts) {
+      return {
+        'data-href': href,
+        'data-id': id,
+        'data-ts': ts
+      }
+    }
+
     //if used in stack/connect/express this will be defined already.
     next = next || function (err) {
       if(!err) err = new Error('not found')
@@ -78,11 +86,13 @@ function Render(layout) {
     }
     else
     if(req.url === render.scriptUrl) {
-      res.status = 200
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'application/javascript')
       return fs.createReadStream(path.join(__dirname, 'browser.js')).pipe(res)
     }
     //if prefixed with /partial/... then render without the layout (no, headder, nav, etc)
     else {
+      res.statusCode = 200
       var useDocType = false
       if(paths[0] === names.Partial) {
         useDocType = false
@@ -128,7 +138,6 @@ function Render(layout) {
 }
 
 module.exports = Render
-
 
 
 
