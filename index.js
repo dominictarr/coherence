@@ -66,6 +66,7 @@ function Render(layout) {
     //check the cache to see if anything has updated.
     if(paths[0] === names.Coherence && paths[1] == names.Cache) {
       res.setHeader('Content-Type', 'application/json')
+      res.statusCode = 200
       var ids = {}, since = +opts.since
       if(since >= render.since) {
         return waiting.push(function (_since) {
@@ -120,7 +121,7 @@ function Render(layout) {
     }
   }
 
-  render.since = 0
+  render.since = Date.now()
 
   render.use = function (path, fn) {
     nested.set(renderers, path2Array(path), fn)
@@ -128,7 +129,7 @@ function Render(layout) {
   }
 
   render.invalidate = function (key, ts) {
-    render.since = Math.max(render.since, cache[key] = ts)
+    latest = render.since = Math.max(render.since, cache[key] = (ts || Date.now()))
     //callback every listener? are we sure
     while(waiting.length)
       waiting.shift()(ts)
