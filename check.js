@@ -1,3 +1,4 @@
+'use strict'
 var names = require('./names')
 var morph = require('morphdom')
 var forms = require('submit-form-element')
@@ -5,7 +6,7 @@ var forms = require('submit-form-element')
 var IDS = {}
 window.COHERENCE = {ids: IDS}
 
-var inflight = 0, timer, since
+var inflight = 0, timer, since, checking = false
 
 //check wether user has this tab open, if it's not open
 //don't check anything again until they come back.
@@ -140,6 +141,7 @@ function scan () {
 var errors = 0
 function check (_since) {
   if(_since == undefined) throw new Error('undefined: since')
+  if(checking) return
   checking = true
   xhr('/' + names.Coherence + '/' + names.Cache + '?since='+_since, function (err, data) {
     if(err) {
@@ -229,4 +231,5 @@ function update (id) {
     console.error('cannot update element, missing data-'+names.PartialHref+' attribute')
   }
 }
+
 
