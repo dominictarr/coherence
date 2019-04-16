@@ -15,12 +15,13 @@
     "pull-paramap": "^1.2.2",
     "pull-stream": "^3.6.9",
     "qs": "^6.6.0",
+    "submit-form-element": "^1.0.0",
     "watch": "^1.0.2"
   },
   "devDependencies": {
     "browserify": "^16.2.3",
     "cont": "^1.0.3",
-    "ecstatic": "^3.3.0",
+    "ecstatic": "^3.3.1",
     "querystring": "^0.2.0",
     "stack": "^0.1.0",
     "urlencoded-request-parser": "^1.0.1"

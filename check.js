@@ -1,5 +1,7 @@
 var names = require('./names')
 var morph = require('morphdom')
+var forms = require('submit-form-element')
+
 var inflight = 0, timer, since
 
 //check wether user has this tab open, if it's not open
@@ -49,7 +51,6 @@ function isTag(element, type) {
   return element.tagName.toLowerCase() == type.toLowerCase()
 }
 
-var forms = require('form-submit')
 var clicked_button = null, timer
 
 //remember which button was clicked, or handle the click if it was a link.
