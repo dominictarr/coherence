@@ -120,7 +120,10 @@ function scan () {
     function (el) {
       since = isNaN(+el.dataset[names.Timestamp]) ? since : Math.min(since, +el.dataset[names.Timestamp])
     })
-  check(since)
+
+  //skip checking if there were no updatable elements found
+  if(since != Infinity) check(since)
+  else console.error('coherence: no updatable elements found')
 }
 
 // call the cache server, and see if there has been any updates
@@ -206,4 +209,5 @@ function update (id) {
     console.error('cannot update element, missing data-'+names.PartialHref+' attribute')
   }
 }
+
 
