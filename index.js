@@ -3,8 +3,6 @@ var QS = require('qs')
 var fs = require('fs')
 var path = require('path')
 
-var nested = require('libnested')
-
 var u = require('./util')
 var names = require('./names')
 
@@ -15,6 +13,15 @@ function path2Array (path) {
 
 var doctype = '<!DOCTYPE html \n  PUBLIC "-//W3C//DTD HTML 4.01//EN"\n  "http://www.w3.org/TR/html4/strict.dtd">'
 
+function get(obj, path) {
+  return obj['/' + path.join('/')]
+}
+function set(obj, path, value) {
+  if('string' == typeof path)
+    path = path2Array(path)
+  return obj['/' + path.join('/')] = value
+}
+
 function Render(layout) {
   var renderers = {}
   var cache = {}
@@ -24,7 +31,7 @@ function Render(layout) {
   function render (req, res, next) {
 
     function apply (path, opts) {
-      var fn = nested.get(renderers, path2Array(path))
+      var fn = get(renderers, path2Array(path))
       if(!fn) {
         throw new Error('no renderer at:'+path)
       }
@@ -68,7 +75,6 @@ function Render(layout) {
       res.setHeader('Content-Type', 'application/json')
       res.statusCode = 200
       var ids = {}, since = +opts.since
-      console.log('SINCE?', since, render.since)
       if(since >= render.since) {
         return waiting.push(function (_since) {
           var ids = {}
@@ -102,13 +108,13 @@ function Render(layout) {
       if(paths[0] === names.Partial) {
         res.setHeader('Content-Type', 'text/plain')
         useDocType = false
-        fn = nested.get(renderers, paths.slice(1))
+        fn = get(renderers, paths.slice(1))
         if(!fn) return next(new Error('not found:'+paths))
         val = fn(opts, apply, req)
       }
       else {
         useDocType = true
-        var fn = nested.get(renderers, paths)
+        var fn = get(renderers, paths)
         if(!fn) return next(new Error('not found:'+paths))
         val = layout(opts, fn(opts, apply, req), apply, req)
       }
@@ -126,7 +132,15 @@ function Render(layout) {
   render.since = Date.now()
 
   render.use = function (path, fn) {
-    nested.set(renderers, path2Array(path), fn)
+    set(renderers, path2Array(path), fn)
+    return render
+  }
+
+  render.setDefault = function (path) {
+    var a = path2Array(path)
+    set(renderers, [], function (opts, apply, req) {
+      return get(renderers, a)(opts, apply, req)
+    })
     return render
   }
 
