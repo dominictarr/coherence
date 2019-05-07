@@ -1,5 +1,3 @@
-
-
 var http = require('http')
 var Stack = require('stack')
 var Coherence = require('../..')
@@ -18,14 +16,13 @@ var coherence = Coherence(function (opts, content) {
   var time = new Date()
   return ['h1', apply.cacheAttrs('/clock', 'clock', +time), time.toString()]
 })
-
+.setDefault('clock')
 
 setInterval(function () {
   coherence.invalidate('clock', Date.now())
 }, 1000)
 
-http.createServer(coherence).listen(8012)
-
-
-
+http.createServer(coherence).listen(3000, function () {
+  console.error('http://localhost:3000')
+})
 

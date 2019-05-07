@@ -106,6 +106,7 @@ var coherence = Coherence(function (opts, content) {
       ]
     ]
 })
+.setDefault('chat')
 
 http.createServer(Stack(
   function (req, res, next) {
@@ -146,6 +147,7 @@ http.createServer(Stack(
       next()
   },
   coherence
-)).listen(8011)
-
+)).listen(3000, function () {
+  console.error('http://localhost:3000')
+})
 

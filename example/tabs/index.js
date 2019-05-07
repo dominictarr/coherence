@@ -32,6 +32,9 @@ var coherence = Coherence(function (opts, content) {
 .use('page', function (opts) {
   return ['h1#target', 'Number:', opts.number || 0]
 })
+.setDefault('page')
 
-http.createServer(coherence).listen(8013)
+http.createServer(coherence).listen(3000, function () {
+  console.error('http://localhost:3000')
+})
 
