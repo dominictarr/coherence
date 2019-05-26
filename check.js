@@ -1,6 +1,6 @@
 'use strict'
 var names = require('./names')
-var morph = require('morphdom')
+var morph = require('nanomorph')
 var forms = require('submit-form-element')
 
 var cache = {}
