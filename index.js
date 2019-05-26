@@ -6,6 +6,10 @@ var path = require('path')
 var u = require('./util')
 var names = require('./names')
 
+function toPath(path) {
+  return '/' + path.join('/')
+}
+
 function path2Array (path) {
   if(Array.isArray(path)) return path
   return (path[0] == '/' ? path : '/' + path).split('/').slice(1)
@@ -14,7 +18,7 @@ function path2Array (path) {
 var doctype = '<!DOCTYPE html \n  PUBLIC "-//W3C//DTD HTML 4.01//EN"\n  "http://www.w3.org/TR/html4/strict.dtd">'
 
 function get(obj, path) {
-  return obj['/' + path.join('/')]
+  return obj[toPath(path)]
 }
 function set(obj, path, value) {
   if('string' == typeof path)
@@ -115,6 +119,7 @@ function Render(layout) {
       else {
         useDocType = true
         var fn = get(renderers, paths)
+        res.setHeader('Content-Type', 'text/html')
         if(!fn) return next(new Error('not found:'+paths))
         val = layout(opts, fn(opts, apply, req), apply, req)
       }
@@ -134,6 +139,50 @@ function Render(layout) {
   render.use = function (path, fn) {
     set(renderers, path2Array(path), fn)
     return render
+  }
+
+  function concat() {
+    return [].concat.apply([], [].map.call(arguments, path2Array))
+  }
+
+  render.group = function (group_path, fn) {
+    function use (_path, fn) {
+      set(renderers, concat(group_path, _path), fn)
+    }
+    //`{system_path}/{key}` -> `{group_path}/{to}`
+    use.map = function (_path, key, to) {
+      render.map(_path, key, concat(group_path, to))
+      return use
+    }
+
+    use.list = function (path, to) {
+      return render.list(path, concat(group_path, to))
+    }
+
+    fn(use)
+    return render
+  }
+
+  render.map = function (path, key, to) {
+    var _path = concat(path, key)
+    set(renderers, _path, function (opts, apply, req) {
+      return get(renderers, to)(opts, apply, req)
+    })
+  }
+
+  render.list = function (path, to) {
+    if(!get(renderers, path)) {
+      var ary = [to]
+      function list (opts, apply, req) {
+        return ary.map(function (fn) {
+          return get(renderers, to)(opts, apply, req)
+        })
+      }
+      list.ary = ary
+      set(renderers, path, list)
+    }
+    else
+      get(renderers, path).ary.push(to)
   }
 
   render.setDefault = function (path) {
@@ -166,5 +215,4 @@ function Render(layout) {
 }
 
 module.exports = Render
-
 
