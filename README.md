@@ -56,7 +56,73 @@ is very low, similar to a static page, unlike typical react or angular applicati
 front end rendering and JSON apis. [your web app is bloated](https://github.com/dominictarr/your-web-app-is-bloated)
 
 
+## attributes -- updatable elements
+
+### data-id
+
+set data-id to any string, it represents _the resource_
+that gets updated. The state of a resource is tracked
+by id, and not by href. there may be multiple different
+hrefs that render a resource with the same id.
+
+### data-href
+
+the url that this resource is rendered from.
+when this element updates, it will be reloaded
+by calling this href, (with `/partial/` infront)
+if the resource has not changed, this url should
+return exactly the same content.
+
+### data-ts
+
+a unix timestamp (in milliseconds) that is the time
+this resource was last invalidated.
+
+## attributes - forms
+
+there are several extra attributes in coherence
+that change the behaviour of forms, to make submissions
+smoother. If a form does not have these, the form
+will be submitted as it would normally - causing
+the page to reload. If any of these are defined,
+the submit will be sent via javascript instead,
+and changes in other elements must be triggered
+by an invalidation.
+
+### data-reset
+
+set on the form
+
+`<form ... data-reset="true">`
+
+resets the form - clears all values back to default.
+
+### data-invalidate=id
+
+set on the form, the value is a element id.
+
+`<form ... data-invalidate="{id}">`
+
+when the form is submitted, any element with
+the matching id is considered invalidated,
+and is updated immediately. The update request
+is not made until after the form submit returns.
+
+### autocomplete=off
+
+set on a text input
+
+`<input type="text" autocomplete="off">`
+
+This is a standard html form attribute, but is useful
+with coherence, especially for chat style applications.
+it prevents a dropdown
+
+
 ## License
 
 MIT
+
+
+
 
