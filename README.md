@@ -55,6 +55,13 @@ Because `coherence` only uses a very small amount of front end javascript, memor
 is very low, similar to a static page, unlike typical react or angular applications with
 front end rendering and JSON apis. [your web app is bloated](https://github.com/dominictarr/your-web-app-is-bloated)
 
+## implementations
+
+coherence is intended to be very easy to implement in
+other languages, or build into your own favorite framework.
+
+* [keks/goherence](https://github.com/keks/goherence)
+* your implementation here
 
 ## attributes -- updatable elements
 
