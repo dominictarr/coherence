@@ -2,6 +2,7 @@ var URL = require('url')
 var QS = require('qs')
 var fs = require('fs')
 var path = require('path')
+var Cache = require('./cache')
 
 var u = require('./util')
 var names = require('./names')
@@ -28,9 +29,7 @@ function set(obj, path, value) {
 
 function Render(layout) {
   var renderers = {}
-  var cache = {}
-  var waiting = []
-  var latest = Date.now(), earliest = Date.now()
+  var cache = Cache()
 
   function render (req, res, next) {
 
@@ -42,7 +41,6 @@ function Render(layout) {
       return fn(opts, apply, req)
     }
 
-    apply.since = latest
     apply.scriptUrl = render.scriptUrl
     apply.toUrl = function (path, opts) {
       return '/' + path + (opts ? '?' + QS.stringify(opts) : '')
@@ -76,28 +74,11 @@ function Render(layout) {
 
     //check the cache to see if anything has updated.
     if(paths[0] === names.Coherence && paths[1] == names.Cache) {
-      res.setHeader('Content-Type', 'application/json')
-      res.statusCode = 200
-      var ids = {}, since = +opts.since
-      if(since >= render.since) {
-        return waiting.push(function (_since) {
-          var ids = {}
-          for(var k in cache) {
-            if(cache[k] > since) {
-              ids[k] = cache[k]
-            }
-          }
-          return res.end(JSON.stringify({ids: ids, start: earliest}))
-        })
-      }
-
-      for(var k in cache) {
-        if(cache[k] > since) {
-          ids[k] = cache[k]
-        }
-      }
-
-      return res.end(JSON.stringify({ids: ids, start: earliest}))
+      return cache(opts, function (err, data) {
+        res.setHeader('Content-Type', 'application/json')
+        res.statusCode = 200
+        res.end(JSON.stringify(data))
+      })
     }
     else
     if(req.url === render.scriptUrl) {
@@ -194,19 +175,12 @@ function Render(layout) {
   }
 
   render.invalidate = function (key, ts) {
-    latest = render.since = Math.max(render.since, cache[key] = (ts || Date.now()))
-    //callback every listener? are we sure
-    while(waiting.length)
-      waiting.shift()(ts)
-    return ts
+    return render.since = cache.invalidate(key, ts)
   }
 
   //invalidate all cache records, this makes the frontend reload everything
   render.invalidateAll = function () {
-    var ts = earliest = latest = render.since = Date.now()
-    while(waiting.length)
-      waiting.shift()(ts)
-    return ts
+    return render.since = cache.invalidateAll()
   }
 
   render.scriptUrl = '/'+names.Coherence + '/' + names.Script + '.js'
@@ -215,4 +189,3 @@ function Render(layout) {
 }
 
 module.exports = Render
-
