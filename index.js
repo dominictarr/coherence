@@ -7,13 +7,13 @@ var Cache = require('./cache')
 var u = require('./util')
 var names = require('./names')
 
-function toPath(path) {
-  return '/' + path.join('/')
-}
-
 function path2Array (path) {
   if(Array.isArray(path)) return path
   return (path[0] == '/' ? path : '/' + path).split('/').slice(1)
+}
+
+function toPath(path) {
+  return '/' + path2Array(path).join('/')
 }
 
 var doctype = '<!DOCTYPE html \n  PUBLIC "-//W3C//DTD HTML 4.01//EN"\n  "http://www.w3.org/TR/html4/strict.dtd">'
@@ -146,24 +146,36 @@ function Render(layout) {
 
   render.map = function (path, key, to) {
     var _path = concat(path, key)
-    set(renderers, _path, function (opts, apply, req) {
+    function map (opts, apply, req) {
       return get(renderers, to)(opts, apply, req)
-    })
+    }
+    set(renderers, _path, map)
+    map.target = to
+    return render
   }
 
   render.list = function (path, to) {
-    if(!get(renderers, path)) {
-      var ary = [to]
-      function list (opts, apply, req) {
-        return ary.map(function (fn) {
-          return get(renderers, to)(opts, apply, req)
+    var list = get(renderers, path)
+    if(!to && list)
+      throw new Error('list:'+path+' is already initialized')
+    else if(to && !list)
+      throw new Error('list:'+path+' is not yet initialized')
+
+    if(!list) {
+      var ary = []
+      list = function (opts, apply, req) {
+        return ary.map(function (to) {
+          var mapped = get(renderers, to)
+          if(!mapped) return ['div.Error', 'no renderer:', to]
+          return mapped(opts, apply, req)
         })
       }
-      list.ary = ary
+      list.list = ary
       set(renderers, path, list)
     }
     else
-      get(renderers, path).ary.push(to)
+      get(renderers, path).list.push(to)
+    return render
   }
 
   render.setDefault = function (path) {
@@ -184,6 +196,18 @@ function Render(layout) {
   }
 
   render.scriptUrl = '/'+names.Coherence + '/' + names.Script + '.js'
+
+  render.dump = function () {
+    var o = {}
+    for(var k in renderers) {
+      if(Array.isArray(renderers[k].list))
+        o[k] = renderers[k].list.map(toPath)
+      else
+        o[k] = renderers[k].target ? toPath(renderers[k].target) : true
+    }
+
+    return o
+  }
 
   return render
 }
