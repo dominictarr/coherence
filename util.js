@@ -2,7 +2,8 @@ var URL = require('url')
 var QS = require('querystring')
 var H = require('h')
 var cpara = require('cont').para
-var pull = require('pull-stream')
+var pull = require('pull-stream/pull')
+var Collect = require('pull-stream/sinks/collect')
 var paramap = require('pull-paramap')
 var nested = require('libnested')
 
@@ -42,7 +43,7 @@ function toCont (f) {
         paramap(function (e, cb) {
           exports.toHTML(e)(cb)
         }, 32),
-        pull.collect(cb)
+        Collect(cb)
       )
     }
 }
