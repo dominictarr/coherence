@@ -1,8 +1,10 @@
 var URL = require('url')
 var QS = require('qs')
 var fs = require('fs')
+var script = fs.readFileSync(__dirname+'/browser.js', 'utf8')
 var path = require('path')
 var Cache = require('./cache')
+var H = require('../h')
 
 var u = require('./util')
 var names = require('./names')
@@ -32,7 +34,7 @@ function Render(layout) {
   var cache = Cache()
 
   function render (req, res, next) {
-
+    console.error(req.method, req.url)
     function apply (path, opts) {
       var fn = get(renderers, path2Array(path))
       if(!fn) {
@@ -84,7 +86,8 @@ function Render(layout) {
     if(req.url === render.scriptUrl) {
       res.statusCode = 200
       res.setHeader('Content-Type', 'application/javascript')
-      return fs.createReadStream(path.join(__dirname, 'browser.js')).pipe(res)
+      return res.end(script, 'utf8')
+      //return .pipe(res)
     }
     //if prefixed with /partial/... then render without the layout (no, headder, nav, etc)
     else {
@@ -106,11 +109,8 @@ function Render(layout) {
       }
 
       u.toHTML(val)(function (err, result) {
-        if(err) return next(err)
-        else if(Array.isArray(result)) {
-          res.end(result.map(function (e) { return e.outerHTML }).join('\n'))
-        }
-        else res.end((useDocType ? doctype : '') + result.outerHTML || '')
+        if(err) next(err)
+        else res.end((useDocType ? doctype : '') + H(result))
       })
     }
   }

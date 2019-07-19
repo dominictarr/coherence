@@ -1,6 +1,6 @@
 var URL = require('url')
 var QS = require('querystring')
-var hyperscript = require('hyperscript')
+var H = require('h')
 var cpara = require('cont').para
 var pull = require('pull-stream')
 var paramap = require('pull-paramap')
@@ -82,7 +82,7 @@ function toHTML (hs) {
     C(function (err, val) {
       if(err) cb(err)
       else if(isArray(val) && isString(val[0])) {
-        cb(null, hyperscript.apply(null, flatten(val)))
+        cb(null, flatten(val))
       } else
         cb(null, val)
     })
@@ -104,5 +104,3 @@ exports.createHiddenInputs = function createHiddenInputs (meta, _path) {
   }, true)
   return hidden
 }
-
-
