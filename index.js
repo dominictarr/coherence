@@ -34,7 +34,6 @@ function Render(layout) {
   var cache = Cache()
 
   function render (req, res, next) {
-    console.error(req.method, req.url)
     function apply (path, opts) {
       var fn = get(renderers, path2Array(path))
       if(!fn) {
@@ -87,7 +86,6 @@ function Render(layout) {
       res.statusCode = 200
       res.setHeader('Content-Type', 'application/javascript')
       return res.end(script, 'utf8')
-      //return .pipe(res)
     }
     //if prefixed with /partial/... then render without the layout (no, headder, nav, etc)
     else {
