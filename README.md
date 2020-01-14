@@ -37,19 +37,24 @@ in an etag header, a resource has a single opaque token. It's just a string that
 identifies the state of a resource. It could be the hash of a file or the timestamp
 a record is updated, or just a random number. In `coherence` cache state is split into
 two parts - the `id` and the `ts` (timestamp). The id just identifies the caching resource.
-the `ts` indicates how old that record is. Since it's a timestamp - we can XXXXXXXXXX
+the `ts` indicates how old that record is. Since it's a timestamp - we can also compare whether it's
+recent or old.
 
-The frontend checks with the server when necessary to see if things should be updated.
-(it asks again when ever something changes, but if the user has switched to another tab,
-until they switch back) of course, this is a contrived example, `coherence` is not intended
-for things that constantly update, but is a good demonstration of the basics.
+The frontend checks with the server to see if things should be updated. It doesn't check all the time
+just when it will be useful to do so. When the page loads, it checks, incase this is a fast changing
+page. If nothing changes that check just sit open. If something does change, if the user is still
+looking at this page, it updates the page and checks again. If the user is not looking at this page
+anymore, it just remembers that the pages needs updating, but doesn't do anything until they come back.
+(It doesn't update at all until they come back, because the page might change again before they return)
+This is not ideal for real time games, but it's fine for form based apps or chatrooms like most react apps.
 
-When the server reports that the current clock is invalid (which happens every second, in this case)
-the partial is requested again from `/clock`, and the result is inserted into the current document.
+In the clock.js example, When the server reports that the current clock is invalid
+(which happens every second, in this demo) the partial is requested again from `/clock`,
+and the result is inserted into the current document.
 
 updates are applied with [morphdom](https://www.npmjs.com/package/morphdom),
 this makes updates very slick and gives the feeling of using a single page application, but
-the feeling of developing a simple http application.
+the feeling of developing a simple html application.
 
 Because `coherence` only uses a very small amount of front end javascript, memory usage
 is very low, similar to a static page, unlike typical react or angular applications with
@@ -129,7 +134,3 @@ it prevents a dropdown
 ## License
 
 MIT
-
-
-
-
